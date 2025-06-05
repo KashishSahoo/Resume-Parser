@@ -8,7 +8,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads/'
 
-# Create uploads folder immediately after app creation
+# Create uploads folder at app start (optional but recommended)
 if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
 
@@ -47,6 +47,10 @@ def matcher():
         job_description = request.form['job_description']
         resume_files = request.files.getlist('resumes')
 
+        # Ensure uploads folder exists before saving files
+        if not os.path.exists(app.config['UPLOAD_FOLDER']):
+            os.makedirs(app.config['UPLOAD_FOLDER'])
+
         resumes = []
         for resume_file in resume_files:
             filename = os.path.join(app.config['UPLOAD_FOLDER'], resume_file.filename)
@@ -75,6 +79,4 @@ def matcher():
     return render_template('matchresume.html')
 
 
-# Do NOT include app.run() when deploying to Render; it uses a Procfile
-if __name__ == '__main__':
-    app.run()
+# No app.run() here because Render uses Procfile to start the app
