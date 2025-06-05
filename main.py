@@ -8,6 +8,10 @@ from sklearn.metrics.pairwise import cosine_similarity
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads/'
 
+# Create uploads folder immediately after app creation
+if not os.path.exists(app.config['UPLOAD_FOLDER']):
+    os.makedirs(app.config['UPLOAD_FOLDER'])
+
 def extract_text_from_pdf(file_path):
     text = ""
     with open(file_path, 'rb') as file:
@@ -71,8 +75,6 @@ def matcher():
     return render_template('matchresume.html')
 
 
-# Don't include app.run() when deploying to Render (it uses Procfile)
+# Do NOT include app.run() when deploying to Render; it uses a Procfile
 if __name__ == '__main__':
-    if not os.path.exists(app.config['UPLOAD_FOLDER']):
-        os.makedirs(app.config['UPLOAD_FOLDER'])
     app.run()
