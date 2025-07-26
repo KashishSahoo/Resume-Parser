@@ -70,7 +70,7 @@ def matcher():
         similarities = cosine_similarity([job_vector], resume_vectors)[0]
 
         # Get top 5 resumes and their similarity scores
-        top_indices = similarities.argsort()[-5:][::-1]
+        top_indices = similarities.argsort()[-2:][::-1]
         top_resumes = [resume_files[i].filename for i in top_indices]
         similarity_scores = [round(similarities[i], 2) for i in top_indices]
 
