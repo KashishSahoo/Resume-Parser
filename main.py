@@ -8,7 +8,6 @@ from sklearn.metrics.pairwise import cosine_similarity
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads/'
 
-# Create uploads folder at app start (optional but recommended)
 if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
 
@@ -17,7 +16,7 @@ def extract_text_from_pdf(file_path):
     with open(file_path, 'rb') as file:
         reader = PyPDF2.PdfReader(file)
         for page in reader.pages:
-            text += page.extract_text()
+            text += page.extract_text() or ""
     return text
 
 def extract_text_from_docx(file_path):
@@ -45,9 +44,9 @@ def matchresume():
 def matcher():
     if request.method == 'POST':
         job_description = request.form['job_description']
+        top_n = int(request.form.get('top_n', 2))  # Default to 2 if not provided
         resume_files = request.files.getlist('resumes')
 
-        # Ensure uploads folder exists before saving files
         if not os.path.exists(app.config['UPLOAD_FOLDER']):
             os.makedirs(app.config['UPLOAD_FOLDER'])
 
@@ -60,23 +59,24 @@ def matcher():
         if not resumes or not job_description:
             return render_template('matchresume.html', message="Please upload resumes and enter a job description.")
 
-        # Vectorize job description and resumes
+        # Vectorization
         vectorizer = TfidfVectorizer().fit_transform([job_description] + resumes)
         vectors = vectorizer.toarray()
 
-        # Calculate cosine similarities
         job_vector = vectors[0]
         resume_vectors = vectors[1:]
         similarities = cosine_similarity([job_vector], resume_vectors)[0]
 
-        # Get top 5 resumes and their similarity scores
-        top_indices = similarities.argsort()[-2:][::-1]
+        # Limit top_n if too large
+        top_n = min(top_n, len(similarities))
+
+        top_indices = similarities.argsort()[-top_n:][::-1]
         top_resumes = [resume_files[i].filename for i in top_indices]
         similarity_scores = [round(similarities[i], 2) for i in top_indices]
 
-        return render_template('matchresume.html', message="Top matching resumes:", top_resumes=top_resumes, similarity_scores=similarity_scores)
+        return render_template('matchresume.html',
+                               message="Top matching resumes:",
+                               top_resumes=top_resumes,
+                               similarity_scores=similarity_scores)
 
     return render_template('matchresume.html')
-
-
-# No app.run() here because Render uses Procfile to start the app
